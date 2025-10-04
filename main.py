@@ -20,10 +20,10 @@ def get_bar(ticker_name: str, time_frame: str = 'M5'):
     bars_response = get_bars(ticker_name, time_frame, start_time, end_time)
     if bars_response is None:
         return {"error": "Failed to retrieve bars"}
-    return {"open_value": float(bars_response.bars[-1].open.value),
-            "close_value": float(bars_response.bars[-1].close.value),
-            "diff_absolute": float(bars_response.bars[-1].close.value) - float(bars_response.bars[-1].open.value),
-            "diff_percent": (float(bars_response.bars[-1].close.value) - float(bars_response.bars[-1].open.value)) / float(bars_response.bars[-1].open.value) * 100,
+    return {"open_value": float(bars_response.bars[-2].open.value),
+            "close_value": float(bars_response.bars[-2].close.value),
+            "diff_absolute": float(bars_response.bars[-2].close.value) - float(bars_response.bars[-2].open.value),
+            "diff_percent": (float(bars_response.bars[-2].close.value) - float(bars_response.bars[-2].open.value)) / float(bars_response.bars[-2].open.value) * 100,
             "ticker_name": ticker_name,}
 
 def start_monitor():
