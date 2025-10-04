@@ -54,7 +54,15 @@ def start_monitor():
                             print(f"  Potential Buy Signal")
                         else:
                             print(f"  Potential Sell Signal")
-                        # TODO: send ticker and (bar.close.value - bar.open.value)
+
+                        data = {
+                            "ticker": ticker_name,
+                            "open": float(bar.open.value),
+                            "close": float(bar.close.value),
+                            "diff_absolute": float(bar.close.value) - float(bar.open.value),
+                            "diff_percent": (float(bar.close.value) - float(bar.open.value)) / float(bar.open.value) * 100
+                        }
+                        requests.post("http://localhost:8000/api/webhook/anomaly", json=data)
                 else:
                     print(f"{datetime.now()} - {ticker_name}: No bars received.")
 
