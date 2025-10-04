@@ -31,10 +31,12 @@ def start_monitor():
     import time
 
     def monitor():
+        sent_timestamps = []
+        calc_time_delta = timedelta(days=3)
+        filter_time_delta = timedelta(minutes=30)
+
         while True:
             for ticker_name in target_tickers:
-                calc_time_delta = timedelta(days=3)
-                filter_time_delta = timedelta(minutes=30)
                 end_time = Timestamp(seconds=int(datetime.timestamp(datetime.now())))
                 start_time = Timestamp(seconds=int(datetime.timestamp(datetime.now() - calc_time_delta)))
                 
@@ -45,10 +47,12 @@ def start_monitor():
                     prices = [float(bar.close.value) - float(bar.open.value) for bar in bars_response.bars]
                     z_scores = zscore(prices)
 
-                    threshold = 7.0
+                    threshold = 10.0 # из-за высокой волатильности рынка, ставим высокий порог
                     filtered_bars = [(bars_response.bars[i], z_scores[i]) for i in range(len(bars_response.bars)) if abs(z_scores[i]) > threshold] # выбираем только анамалии
                     filtered_bars = filter(lambda x: x[0].timestamp.ToDatetime() > datetime.now() - filter_time_delta, filtered_bars) # фильтруем по времени (последние 5 минут)
                     for bar, z in filtered_bars:
+                        if bar.timestamp in sent_timestamps:
+                            continue
                         print(f"{bar.timestamp.ToDatetime() + timedelta(hours=3)} - {ticker_name}: Anomalous bar detected - Open: {bar.open.value}, Close: {bar.close.value}, Z-Score: {z}")
                         if z > 0:
                             print(f"  Potential Buy Signal")
@@ -62,9 +66,14 @@ def start_monitor():
                             "diff_absolute": float(bar.close.value) - float(bar.open.value),
                             "diff_percent": (float(bar.close.value) - float(bar.open.value)) / float(bar.open.value) * 100
                         }
-                        requests.post("http://localhost:8000/api/webhook/anomaly", json=data)
+                        response = requests.post("http://localhost:8000/api/webhook/anomaly", json=data)
+                        if response.status_code == 200:
+                            sent_timestamps.append(bar.timestamp)
                 else:
                     print(f"{datetime.now()} - {ticker_name}: No bars received.")
+                for ts in sent_timestamps:
+                    if ts.ToDatetime() < datetime.now() - filter_time_delta:
+                        sent_timestamps.remove(ts)
 
             time.sleep(60)
 
