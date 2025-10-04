@@ -1,15 +1,16 @@
 from datetime import datetime, timedelta
 
 from fastapi import FastAPI
-from FinamAPI import get_bars, get_moex_tickers
+from FinamAPI import FinamAPI
 from google.protobuf.timestamp_pb2 import Timestamp
 
 from scipy.stats import zscore
 import requests
 
 app = FastAPI()
+fAPI = FinamAPI()
 
-target_tickers = get_moex_tickers()
+target_tickers = fAPI.get_moex_tickers()
 print(len(target_tickers), 'MOEX tickers loaded.')
 
 @app.get("/bars")
@@ -17,7 +18,7 @@ def get_bar(ticker_name: str, time_frame: str = 'M5'):
     start_time = Timestamp(seconds=int(datetime.timestamp(datetime.now() - timedelta(days=2))))
     end_time = Timestamp(seconds=int(datetime.timestamp(datetime.now())))
 
-    bars_response = get_bars(ticker_name, time_frame, start_time, end_time)
+    bars_response = fAPI.get_bars(ticker_name, time_frame, start_time, end_time)
     if bars_response is None:
         return {"error": "Failed to retrieve bars"}
     return {"open_value": float(bars_response.bars[-2].open.value),
@@ -39,8 +40,8 @@ def start_monitor():
             for ticker_name in target_tickers:
                 end_time = Timestamp(seconds=int(datetime.timestamp(datetime.now())))
                 start_time = Timestamp(seconds=int(datetime.timestamp(datetime.now() - calc_time_delta)))
-                
-                bars_response = get_bars(ticker_name, 'M5', start_time, end_time)
+
+                bars_response = fAPI.get_bars(ticker_name, 'M5', start_time, end_time)
                 if bars_response is None:
                     continue
                 if len(bars_response.bars) > 0:
