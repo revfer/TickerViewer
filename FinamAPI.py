@@ -54,6 +54,5 @@ if __name__ == '__main__':
     #for bar in bars_response.bars:
     #    print(bar)
 
-    tickers = get_tickers_names()
+    tickers = get_moex_tickers()
     print(tickers)
-
